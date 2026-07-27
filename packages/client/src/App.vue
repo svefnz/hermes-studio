@@ -16,8 +16,6 @@ const DesktopTitleBar = defineAsyncComponent(async () => (await import('@/compon
 const SessionSearchModal = defineAsyncComponent(async () => (await import('@/components/hermes/chat/SessionSearchModal.vue')).default)
 const DefaultCredentialPrompt = defineAsyncComponent(async () => (await import('@/components/auth/DefaultCredentialPrompt.vue')).default)
 const ProviderConfigurationPrompt = defineAsyncComponent(async () => (await import('@/components/hermes/models/ProviderConfigurationPrompt.vue')).default)
-const WebPet = defineAsyncComponent(async () => (await import('@/components/hermes/pets/WebPet.vue')).default)
-
 const { isDark, isComic } = useTheme()
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -51,8 +49,6 @@ const desktopTitleBarLeft = computed(() => {
   if (showAppSidebar.value) return appStore.sidebarCollapsed ? 84 : 260
   return appStore.pageSidebarExpanded ? 260 : 10
 })
-const isDesktopPetRoute = computed(() => route.name === 'desktop.pet')
-const showWebPet = computed(() => !isLoginPage.value && !isStandaloneChatPage.value && !isDesktopShell.value && !isDesktopPetRoute.value)
 const desktopPlatformClass = computed(() => desktopPlatform.value ? `desktop-platform-${desktopPlatform.value}` : '')
 const isDesktopWindowMaximized = ref(false)
 let stopWindowStateListener: (() => void) | undefined
@@ -103,8 +99,7 @@ useKeyboard()
       <AuthEventListener />
       <NDialogProvider>
         <NNotificationProvider>
-          <router-view v-if="isDesktopPetRoute" />
-          <div v-else class="app-shell" :class="[desktopPlatformClass, { desktop: isDesktopShell, 'desktop-chat-window': isDesktopChatWindow, 'desktop-window-maximized': isDesktopWindowMaximized }]">
+          <div class="app-shell" :class="[desktopPlatformClass, { desktop: isDesktopShell, 'desktop-chat-window': isDesktopChatWindow, 'desktop-window-maximized': isDesktopWindowMaximized }]">
             <DesktopTitleBar
               v-if="showDesktopTitleBar"
               :standalone="isLoginPage || isDesktopChatWindow"
@@ -124,10 +119,9 @@ useKeyboard()
               </main>
             </div>
           </div>
-          <WebPet v-if="showWebPet" />
-          <SessionSearchModal v-if="!isDesktopPetRoute && !isStandaloneChatPage && sessionSearchOpen" />
-          <DefaultCredentialPrompt v-if="!isDesktopPetRoute && !isStandaloneChatPage" />
-          <ProviderConfigurationPrompt v-if="!isDesktopPetRoute && !isStandaloneChatPage" />
+          <SessionSearchModal v-if="!isStandaloneChatPage && sessionSearchOpen" />
+          <DefaultCredentialPrompt v-if="!isStandaloneChatPage" />
+          <ProviderConfigurationPrompt v-if="!isStandaloneChatPage" />
         </NNotificationProvider>
       </NDialogProvider>
     </NMessageProvider>

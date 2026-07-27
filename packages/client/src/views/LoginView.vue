@@ -96,9 +96,9 @@ async function handlePasswordLogin() {
           </template>
           <template v-else>
             <span>{{ t("login.lockResetHint") }}</span>
-            <code>hermes-web-ui clear-login-locks --restart</code>
+            <code>hermes-studio clear-login-locks --restart</code>
             <span>{{ t("login.defaultLoginResetHint") }}</span>
-            <code>hermes-web-ui reset-default-login</code>
+            <code>hermes-studio reset-default-login</code>
           </template>
         </div>
         <button type="submit" class="login-btn" :disabled="loading">

@@ -1,5 +1,3 @@
-import type { ChatCodingAgentId } from '@/api/coding-agents'
-
 const SCOPED_EXTERNAL_AGENT_AUTH_PROVIDERS = new Set([
   'openai-codex',
   'copilot',
@@ -14,15 +12,15 @@ export function isAuthModelProvider(provider?: string): boolean {
 }
 
 export function canScopedCodingAgentUseProvider(
-  agentId: ChatCodingAgentId,
+  _agentId: string,
   provider?: string,
 ): boolean {
-  return agentId === 'ekko-agent' || !isAuthModelProvider(provider)
+  return !isAuthModelProvider(provider)
 }
 
 export function usesServerManagedProviderAuth(
-  agentId: ChatCodingAgentId,
-  provider?: string,
+  _agentId: string,
+  _provider?: string,
 ): boolean {
-  return agentId === 'ekko-agent' && isAuthModelProvider(provider)
+  return false
 }

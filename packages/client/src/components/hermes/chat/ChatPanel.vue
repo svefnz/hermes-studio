@@ -50,7 +50,6 @@ import TerminalPanel from "./TerminalPanel.vue";
 import SubagentStreamPanel from "./SubagentStreamPanel.vue";
 import { buildVisibleSessionCategoryGroups } from "./session-category-groups";
 import PageSidebarNav from "@/components/layout/PageSidebarNav.vue";
-import SettingsCircuitBadge from "@/components/layout/SettingsCircuitBadge.vue";
 import { isStoredSuperAdmin } from "@/api/client";
 import { useDefaultWorkspace } from "@/composables/useDefaultWorkspace";
 import { canScopedCodingAgentUseProvider, usesServerManagedProviderAuth } from "@/utils/codingAgentProviders";
@@ -787,7 +786,7 @@ const newChatAgentOptions = computed(() => [
   { label: "Hermes", value: "hermes" },
   { label: "Claude Code", value: "claude-code" },
   { label: "Codex", value: "codex" },
-  { label: "Ekko Agent", value: "ekko-agent" },
+
 ]);
 
 const newChatApiModeOptions = computed(() => [
@@ -810,7 +809,7 @@ function getModelGroupsForProfile(profile: string) {
 
 function isNewChatProviderAllowed(group: AvailableModelGroup) {
   if (group.provider === "moa") return newChatAgent.value === "hermes";
-  const mode = newChatAgent.value === "ekko-agent" ? "scoped" : newChatAgentMode.value;
+  const mode = newChatAgentMode.value;
   if (!(newChatAgent.value !== "hermes" && mode === "scoped")) return true;
   return canScopedCodingAgentUseProvider(newChatAgent.value as ChatCodingAgentId, group.provider);
 }
@@ -899,7 +898,7 @@ const selectedNewChatProviderGroup = computed(() =>
 const isNewChatCodingAgent = computed(() => newChatAgent.value !== "hermes");
 const isNewChatExternalCodingAgent = computed(() => newChatAgent.value === "claude-code" || newChatAgent.value === "codex");
 const effectiveNewChatAgentMode = computed(() =>
-  newChatAgent.value === "ekko-agent" ? "scoped" : newChatAgentMode.value,
+  newChatAgentMode.value,
 );
 const isNewChatGlobalCodingAgent = computed(() =>
   isNewChatCodingAgent.value && effectiveNewChatAgentMode.value === "global",
@@ -1079,8 +1078,6 @@ async function confirmNewChat() {
     ? "codex"
     : newChatAgent.value === "claude-code"
       ? "claude"
-      : newChatAgent.value === "ekko-agent"
-        ? "ekko-agent"
       : "hermes";
   const session = chatStore.newChat({
     profile: newChatProfile.value,
@@ -1588,9 +1585,7 @@ const sessionModelCodingAgentId = computed<ChatCodingAgentId | undefined>(() =>
     ? "claude-code"
     : sessionModelSession.value?.agent === "codex"
       ? "codex"
-      : sessionModelSession.value?.agent === "ekko-agent"
-        ? "ekko-agent"
-        : undefined),
+      : undefined),
 );
 const isSessionModelCodingAgent = computed(() =>
   sessionModelSession.value?.source === "coding_agent" || Boolean(sessionModelSession.value?.codingAgentId),
@@ -2037,7 +2032,6 @@ async function handleSessionModelCustomSubmit() {
           </svg>
           <span>{{ t("sidebar.settings") }}</span>
         </button>
-        <SettingsCircuitBadge />
       </div>
     </aside>
 

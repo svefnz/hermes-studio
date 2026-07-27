@@ -6,7 +6,6 @@ import { existsSync } from 'fs'
 import { homedir } from 'os'
 import { isAbsolute, resolve as resolvePath } from 'path'
 import { spawn } from 'child_process'
-import { getDeviceRelation } from '../db/hermes/devices-store'
 import type { LanDeviceInfo } from './lan-discovery'
 import { createDeviceSignature, getPublicSystemInfo, verifyDeviceSignature } from './system-info'
 import { getTerminalConfig, validatePath } from './hermes/file-provider'
@@ -1096,10 +1095,6 @@ export class LanPeerSocketManager {
       return { ok: false, status: 409, message: 'Replay Request' }
     }
 
-    const relation = getDeviceRelation(deviceId)
-    if (relation?.inbound_status !== 'approved') {
-      return { ok: false, status: 403, message: 'Forbidden' }
-    }
 
     const host = req.socket.remoteAddress?.startsWith('::ffff:')
       ? req.socket.remoteAddress.slice(7)

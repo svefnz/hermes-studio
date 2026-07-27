@@ -6,10 +6,6 @@ import type { Server, Socket } from 'socket.io'
 import { updateSession, updateSessionStats } from '../../../db/hermes/session-store'
 import { logger } from '../../logger'
 import { codingAgentRunManager } from '../../agent-runner/coding-agent-run-manager'
-import {
-  abortGlobalEkkoBackgroundTasks,
-  hasGlobalEkkoBackgroundTasks,
-} from '../../ekko-agent/manager'
 import { flushBridgePendingToDb } from './bridge-message'
 import { flushResponseRunToDb } from './response-stream'
 import { replaceState } from './compression'
@@ -56,14 +52,13 @@ export async function handleAbort(
 ) {
   let state = sessionMap.get(sessionId)
   const hasCodingAgentRun = codingAgentRunManager.hasSession(sessionId)
-  const hasEkkoBackgroundTasks = hasGlobalEkkoBackgroundTasks(sessionId)
-  if (!state && (hasCodingAgentRun || hasEkkoBackgroundTasks)) {
+  if (!state && hasCodingAgentRun) {
     state = { messages: [], isWorking: true, events: [], queue: [], source: 'coding_agent' }
     sessionMap.set(sessionId, state)
   }
-  const isCodingAgentRun = state?.source === 'coding_agent' || hasCodingAgentRun || hasEkkoBackgroundTasks
+  const isCodingAgentRun = state?.source === 'coding_agent' || hasCodingAgentRun
   if (
-    (!state?.isWorking && !hasCodingAgentRun && !hasEkkoBackgroundTasks) ||
+    (!state?.isWorking && !hasCodingAgentRun) ||
     (state && !isCodingAgentRun && !state.runId && !state.abortController)
   ) {
     logger.info({ sessionId }, '[chat-run-socket][abort] ignored: no active run')
@@ -173,12 +168,6 @@ export async function handleAbort(
   } else if (isCodingAgentRun) {
     activeState.abortController?.abort()
     codingAgentRunManager.stop(sessionId, { reportClosed: false })
-    if (hasEkkoBackgroundTasks) {
-      await abortGlobalEkkoBackgroundTasks(sessionId)
-      for (const task of settleInterruptedBackgroundTasks(activeState)) {
-        emitToSession(nsp, socket, sessionId, 'subagent.complete', task)
-      }
-    }
   } else if (activeState.abortController) {
     activeState.abortController.abort()
   }

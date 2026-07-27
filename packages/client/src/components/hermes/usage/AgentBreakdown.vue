@@ -11,7 +11,7 @@ const agentLabels: Record<string, string> = {
   hermes: 'hermes',
   claude_code: 'claudeCode',
   codex: 'codex',
-  ekko_agent: 'ekkoAgent',
+
 }
 
 function agentName(agent: string): string {

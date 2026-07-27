@@ -22,7 +22,6 @@ import { getAgentBridgeManager } from '../agent-bridge/manager'
 import { redactAgentBridgeError } from '../agent-bridge/redact'
 import { handleBridgeRun, resumeBridgeRun } from './handle-bridge-run'
 import { handleCodingAgentRun } from './handle-coding-agent-run'
-import { handleEkkoAgentRun } from './handle-ekko-agent-run'
 import { handleAbort } from './abort'
 import { getOrCreateSession } from './compression'
 import { loadSessionStateFromDb, resolveRunSource } from './load-state'
@@ -31,8 +30,6 @@ import { contentBlocksToString } from './content-blocks'
 import type { ChatCodingAgentId, ContentBlock, QueuedRun, SessionState } from './types'
 import { authenticateUserToken, isAuthEnabled, type AuthenticatedUser } from '../../../middleware/user-auth'
 import { userCanAccessProfile } from '../../../db/hermes/users-store'
-import { observeRunChatPetEvent } from '../pet-state-socket'
-
 export type { ContentBlock } from './types'
 
 function currentProfileFromSocket(socket: Socket): string {
@@ -55,7 +52,6 @@ function persistHermesBackgroundResult(
     ? event.results.filter(result => result && typeof result === 'object') as Array<Record<string, unknown>>
     : [event]
   const stateTasks = Object.values(state.backgroundTasks || {})
-    .filter(task => task.runtime !== 'ekko')
   const dispatchGoals = Array.isArray(dispatch.goals)
     ? dispatch.goals.map(value => String(value || '').trim())
     : []
@@ -125,11 +121,11 @@ function isHermesWorkerBackedSession(session?: { source?: string | null; agent?:
   if (!source || source === 'cli' || source === 'api_server') return true
   if (source === 'workflow') {
     const agent = String(session?.agent || '').trim()
-    return agent !== 'claude' && agent !== 'codex' && agent !== 'ekko-agent' && !session?.agent_session_id
+    return agent !== 'claude' && agent !== 'codex' && !session?.agent_session_id
   }
   if (source !== 'global_agent') return false
   const agent = String(session?.agent || '').trim()
-  return agent !== 'claude' && agent !== 'codex' && agent !== 'ekko-agent' && !session?.agent_session_id
+  return agent !== 'claude' && agent !== 'codex' && !session?.agent_session_id
 }
 
 function isBridgeRunSource(source?: string): boolean {
@@ -162,10 +158,6 @@ function resolveSessionCategoryId(value: unknown): number | null {
   const categoryId = Number(value)
   if (!Number.isSafeInteger(categoryId) || categoryId <= 0) return null
   return getSessionCategory(categoryId) ? categoryId : null
-}
-
-function isEkkoAgentExecution(data?: { coding_agent_id?: string; agent_id?: string }): boolean {
-  return data?.coding_agent_id === 'ekko-agent' || data?.agent_id === 'ekko-agent'
 }
 
 export interface ChatRunAndWaitResult {
@@ -589,19 +581,6 @@ export class ChatRunSocket {
       return
     }
 
-    if (isEkkoAgentExecution(data)) {
-      await handleEkkoAgentRun(
-        this.nsp,
-        socket,
-        data,
-        profile,
-        this.sessionMap,
-        this.dequeueNextQueuedRun.bind(this),
-        skipUserMessage,
-      )
-      return
-    }
-
     await handleCodingAgentRun(
       this.nsp,
       socket,
@@ -768,7 +747,7 @@ export class ChatRunSocket {
       if (Object.values(state.backgroundDelegations || {})
         .some(item => item.status === 'running' || item.status === 'delivering')) return true
       if (Object.values(state.backgroundTasks || {})
-        .some(task => task.status === 'running' && task.runtime !== 'ekko')) return true
+        .some(task => task.status === 'running')) return true
     }
     return false
   }
@@ -1401,7 +1380,6 @@ export class ChatRunSocket {
 
   private observePetEvent(profile: string, event: string, payload: Record<string, unknown>): void {
     try {
-      observeRunChatPetEvent(profile, event, payload)
     } catch (err) {
       logger.debug(err, '[chat-run-socket] failed to update pet state')
     }

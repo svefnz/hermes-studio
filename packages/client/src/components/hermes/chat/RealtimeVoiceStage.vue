@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { createMcuSpeechSegmenter } from '@/api/hermes/mcu-interaction'
 import { transcribeSpeech } from '@/api/hermes/stt'
 import { fetchSttSettings, type SttProviderSettingsResponse } from '@/api/hermes/stt-settings'
 import { synthesizeSpeech } from '@/api/hermes/tts'
@@ -115,7 +114,12 @@ const synthesisControllers = new Set<AbortController>()
 const synthesisJobs: SpeechSynthesisJob[] = []
 const processedAssistantText = new Map<string, string>()
 const processedToolMessageIds = new Set<string>()
-const speechSegmenter = createMcuSpeechSegmenter({ emitOnSentenceEnd: true })
+// Speech segmenter is disabled after removing MCU interaction module
+const speechSegmenter = {
+  pushDelta: (_delta: string) => [] as string[],
+  flush: () => null as string | null,
+  reset: () => {},
+}
 
 const currentTranscript = computed(() => {
   const liveTranscript = normalizeText([
@@ -138,7 +142,7 @@ const agentDisplayName = computed(() => {
     claude: 'Claude Code',
     'claude-code': 'Claude Code',
     codex: 'Codex',
-    'ekko-agent': 'Ekko Agent',
+
   }[agent] || agent
 })
 const statusLabel = computed(() => t(`realtimeVoice.status.${mode.value}`, {

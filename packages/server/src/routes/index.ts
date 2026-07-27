@@ -6,8 +6,6 @@ import { webhookRoutes } from './webhook'
 import { uploadRoutes } from './upload'
 import { updateRoutes } from './update'
 import { authPublicRoutes, authProtectedRoutes } from './auth'
-import { devicePublicRoutes, deviceRoutes } from './devices'
-import { mcuDeviceRoutes } from './mcu-devices'
 import { codingAgentRoutes } from './coding-agents'
 import { apiDocsRoutes } from './api-docs'
 import { claudeCodeProxyRoutes } from './claude-code-proxy'
@@ -38,7 +36,6 @@ import { kanbanRoutes } from './hermes/kanban'
 import { workflowRoutes } from './hermes/workflows'
 import { ttsRoutes, ttsProtectedRoutes } from './hermes/tts'
 import { sttProtectedRoutes } from './hermes/stt'
-import { mcuFirmwareRoutes } from './hermes/mcu-firmware'
 import { mediaRoutes } from './hermes/media'
 import { groupChatRoutes, setGroupChatServer } from './hermes/group-chat'
 import { chatRunRoutes } from './hermes/chat-run'
@@ -47,8 +44,7 @@ import { journeyRoutes } from './hermes/journey'
 import { mcpRoutes } from './hermes/mcp'
 import { runtimeVersionRoutes } from './hermes/runtime-versions'
 import { writeGateRoutes } from './hermes/write-gate'
-import { petdexPublicRoutes, petdexRoutes } from './hermes/petdex'
-import { petRoutes } from './hermes/pets'
+
 
 /**
  * Register all routes on the Koa app.
@@ -60,20 +56,15 @@ export function registerRoutes(app: any, authMiddleware: Array<(ctx: Context, ne
   app.use(healthRoutes.routes())
   app.use(webhookRoutes.routes())
   app.use(authPublicRoutes.routes())
-  app.use(devicePublicRoutes.routes())
   app.use(claudeCodeProxyRoutes.routes())
   app.use(codexProxyRoutes.routes())
   app.use(ttsRoutes.routes())
   app.use(apiDocsRoutes.routes())
-  app.use(petdexPublicRoutes.routes())
-
   // --- Auth middleware: all routes below require authentication ---
   authMiddleware.forEach((middleware) => app.use(middleware))
 
   // --- Protected routes (auth required) ---
   app.use(authProtectedRoutes.routes())
-  app.use(deviceRoutes.routes())
-  app.use(mcuDeviceRoutes.routes())
   app.use(uploadRoutes.routes())
   app.use(updateRoutes.routes())           // Must be before proxy (proxy catch-all matches everything)
   app.use(codingAgentRoutes.routes())
@@ -103,13 +94,10 @@ export function registerRoutes(app: any, authMiddleware: Array<(ctx: Context, ne
   app.use(workflowRoutes.routes())
   app.use(ttsProtectedRoutes.routes())
   app.use(sttProtectedRoutes.routes())
-  app.use(mcuFirmwareRoutes.routes())
   app.use(mediaRoutes.routes())
   app.use(performanceMonitorRoutes.routes())
   app.use(journeyRoutes.routes())
   app.use(mcpRoutes.routes())                   // MCP management
   app.use(runtimeVersionRoutes.routes())         // Runtime and version management
   app.use(writeGateRoutes.routes())              // Hermes Agent write approval review
-  app.use(petdexRoutes.routes())
-  app.use(petRoutes.routes())
 }

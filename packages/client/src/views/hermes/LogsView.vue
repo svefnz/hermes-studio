@@ -69,7 +69,7 @@ async function loadLogs() {
     const data = await fetchLogs(selectedLog.value, {
       lines: lineCount.value,
       level: levelFilter.value || undefined,
-      text: selectedLog.value === 'ekko-agent' ? searchQuery.value || undefined : undefined,
+      text: searchQuery.value || undefined,
     })
     entries.value = data.filter((e): e is LogEntry => e !== null)
   } catch (e: any) {

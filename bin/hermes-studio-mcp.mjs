@@ -51,7 +51,7 @@ Usage:
 
 Environment:
   HERMES_WEB_UI_URL       Web UI base URL. Default: ${DEFAULT_BASE_URL}
-  HERMES_WEB_UI_HOME      Web UI state directory. Default: ~/.hermes-web-ui
+  HERMES_WEB_UI_HOME      Web UI state directory. Default: ~/.hermes-studio
   HERMES_WEBUI_STATE_DIR  Fallback Web UI state directory.
   HERMES_WEB_UI_PROFILE   Default Hermes profile when a tool call omits profile.
   HERMES_WEB_UI_TOKEN     Optional explicit API token.
@@ -79,7 +79,7 @@ if (process.argv.includes('-v') || process.argv.includes('--version')) {
 function appHome() {
   return process.env.HERMES_WEB_UI_HOME ||
     process.env.HERMES_WEBUI_STATE_DIR ||
-    join(homedir(), '.hermes-web-ui')
+    join(homedir(), '.hermes-studio')
 }
 
 function normalizeProfileSegment(profile) {
@@ -156,7 +156,7 @@ async function request(path, options = {}) {
 
 function appendQuery(path, query) {
   if (!query || typeof query !== 'object' || Array.isArray(query)) return path
-  const parsed = new URL(path, 'http://hermes-web-ui.local')
+  const parsed = new URL(path, 'http://hermes-studio.local')
   for (const [key, value] of Object.entries(query)) {
     if (value == null) continue
     if (Array.isArray(value)) {
@@ -228,7 +228,7 @@ function normalizeApiPath(path) {
   const raw = String(path || '').trim()
   if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return null
   if (raw === '/v1' || raw.startsWith('/v1/')) return null
-  const parsed = new URL(raw, 'http://hermes-web-ui.local')
+  const parsed = new URL(raw, 'http://hermes-studio.local')
   const normalized = `${parsed.pathname}${parsed.search}`
   if (parsed.pathname === '/api/openapi.json') return normalized
   if (parsed.pathname === '/health') return normalized
@@ -249,7 +249,7 @@ async function openApiDocument(options = {}) {
 }
 
 function pathWithoutQuery(path) {
-  return new URL(path, 'http://hermes-web-ui.local').pathname
+  return new URL(path, 'http://hermes-studio.local').pathname
 }
 
 function pathTemplateRegex(template) {
@@ -274,7 +274,7 @@ function findOpenApiOperation(openapi, method, path) {
 }
 
 function queryObjectFromPath(path, query) {
-  const parsed = new URL(path, 'http://hermes-web-ui.local')
+  const parsed = new URL(path, 'http://hermes-studio.local')
   const values = {}
   for (const [key, value] of parsed.searchParams.entries()) {
     if (values[key] === undefined) values[key] = value

@@ -35,7 +35,6 @@ import { markAbortCompleted } from './abort'
 import { writeModelRunProfileToken } from './model-run-prompt'
 import type { AuthenticatedUser } from '../../../middleware/user-auth'
 import { ensureHermesRunWorkspace } from './workspace'
-import { observeRunChatPetEvent } from '../pet-state-socket'
 import { completeWorkspaceRunCheckpoint, startWorkspaceRunCheckpoint } from './workspace-diff-tracker'
 
 const BRIDGE_USAGE_FLUSH_DELAY_MS = 200
@@ -977,12 +976,8 @@ export async function resumeBridgeRun(
   }
 }
 
-function observePetEvent(profile: string, event: string, payload: Record<string, unknown>): void {
-  try {
-    observeRunChatPetEvent(profile, event, payload)
-  } catch (err) {
-    logger.debug(err, '[chat-run-socket] failed to update pet state')
-  }
+function observePetEvent(_profile: string, _event: string, _payload: Record<string, unknown>): void {
+  // No-op after pet system removal
 }
 
 async function refreshFinalContextUsage(args: {

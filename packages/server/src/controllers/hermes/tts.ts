@@ -4,7 +4,6 @@ import { stat } from 'fs/promises'
 import { textToSpeech, openaiCompatibleTts, speedToEdgeRate } from '../../services/hermes/tts'
 import { getTtsProvider } from '../../services/hermes/tts-providers'
 import { assertSafeResolvedTtsBaseUrl } from '../../services/hermes/tts-providers/url-safety'
-import { isValidMcuAudioFileName, resolveMcuAudioPath } from '../../services/hermes/mcu-prompts'
 import {
   assertActiveTtsProvider,
   assertStoredTtsProvider,
@@ -604,33 +603,4 @@ export async function openaiProxy(ctx: Context) {
   ctx.body = audio
 }
 
-export async function mcuAudio(ctx: Context) {
-  const file = String(ctx.params.file || '').trim()
-  if (!isValidMcuAudioFileName(file)) {
-    ctx.status = 404
-    ctx.body = { error: 'audio not found' }
-    return
-  }
 
-  try {
-    const audio = await resolveMcuAudioPath(file)
-    if (!audio) {
-      ctx.status = 404
-      ctx.body = { error: 'audio not found' }
-      return
-    }
-    const info = await stat(audio.path)
-    if (!info.isFile()) {
-      ctx.status = 404
-      ctx.body = { error: 'audio not found' }
-      return
-    }
-    ctx.set('Content-Type', file.toLowerCase().endsWith('.adpcm') ? 'audio/x-ima-adpcm' : 'audio/x-pcm')
-    ctx.set('Content-Length', String(info.size))
-    ctx.set('Cache-Control', audio.bundled ? 'public, max-age=31536000, immutable' : 'no-store')
-    ctx.body = createReadStream(audio.path)
-  } catch {
-    ctx.status = 404
-    ctx.body = { error: 'audio not found' }
-  }
-}

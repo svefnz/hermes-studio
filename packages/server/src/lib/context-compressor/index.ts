@@ -2,8 +2,7 @@
  * Chat Context Compressor
  *
  * Compresses 1:1 chat conversation history before sending to upstream.
- * Uses the Hermes structured summary prompt with a clean Ekko runtime and can
- * optionally fall back to the Hermes Agent Bridge when the host allows it.
+ * Uses the Hermes structured summary prompt with the Hermes Agent Bridge.
  *
  * Algorithm:
  * 1. If total tokens < trigger threshold → return as-is
@@ -20,13 +19,7 @@ import { mkdir, writeFile } from 'fs/promises'
 import { resolve } from 'path'
 import { logger } from '../../services/logger'
 import { AgentBridgeClient, type AgentBridgeRunResult } from '../../services/hermes/agent-bridge'
-import { resolveEkkoProviderRuntimeConfig } from '../../services/ekko-agent/provider-runtime'
 import { truncateToolResultForContext } from '../tool-result-context'
-import {
-  AgentRuntime,
-  createModelClient,
-  resolveModelProviderConfigs,
-} from '../../../../ekko-agent/src'
 import {
   getCompressionSnapshot,
   saveCompressionSnapshot,
@@ -96,7 +89,6 @@ export interface SummarizerOptions {
   apiMode?: string | null
   historyRevision?: number
   workerKey?: string
-  allowHermesFallback?: boolean
 }
 
 type SummarizerConversationMessage = {
@@ -105,7 +97,6 @@ type SummarizerConversationMessage = {
 }
 
 const SUMMARIZER_TRIGGER_MESSAGE = 'Generate the context checkpoint summary now.'
-const EKKO_SUMMARIZER_SYSTEM_PROMPT = 'You are a context checkpoint summarizer. Follow the supplied instructions exactly and return only the updated summary.'
 const SUMMARIZER_DEBUG_DIR = 'logs/context-compressor'
 const SUMMARIZER_DEBUG_FILE = 'summarizer-debug.json'
 
@@ -527,98 +518,10 @@ export async function callSummarizer(
     convHistory.unshift({ role: 'user', content: prompt })
   }
 
-  try {
-    return await callEkkoSummarizer(upstream, apiKey, convHistory, timeoutMs, {
-      ...options,
-      profile,
-    })
-  } catch (err) {
-    if (options.allowHermesFallback === false) {
-      logger.warn(
-        {
-          err,
-          cause: err instanceof Error ? err.cause : undefined,
-        },
-        '[context-compressor] clean Ekko summarizer failed; Hermes fallback disabled for profile %s',
-        profile,
-      )
-      throw err
-    }
-    logger.warn(err, '[context-compressor] clean Ekko summarizer failed; falling back to Hermes for profile %s', profile)
-    return callHermesSummarizer(convHistory, timeoutMs, {
-      ...options,
-      profile,
-    })
-  }
-}
-
-async function callEkkoSummarizer(
-  upstream: string,
-  apiKey: string | undefined,
-  convHistory: SummarizerConversationMessage[],
-  timeoutMs: number,
-  options: SummarizerOptions & { profile: string },
-): Promise<string> {
-  const model = String(options.model || '').trim()
-  const provider = String(options.provider || '').trim()
-  if (!model || !provider) throw new Error('Ekko summarization requires a model and provider')
-
-  const runtimeConfig = await resolveEkkoProviderRuntimeConfig({
-    profile: options.profile,
-    provider,
-    baseUrl: upstream,
-    apiKey,
-    apiMode: String(options.apiMode || '').trim() || undefined,
+  return callHermesSummarizer(convHistory, timeoutMs, {
+    ...options,
+    profile,
   })
-  const { providerConfig } = resolveModelProviderConfigs({
-    provider: runtimeConfig.provider,
-    baseUrl: runtimeConfig.baseUrl,
-    apiKey: runtimeConfig.apiKey,
-    model,
-    apiMode: runtimeConfig.apiMode,
-    timeoutMs,
-  })
-  const providerClient = createModelClient(providerConfig)
-  const runtime = new AgentRuntime({
-    // Preserve the provider's streaming capability. Long summary requests can
-    // otherwise sit idle until the complete response is ready and be severed
-    // by an upstream gateway before our own timeout is reached.
-    modelClient: providerClient,
-    toolsEnabled: false,
-    skillsEnabled: false,
-    systemPrompt: EKKO_SUMMARIZER_SYSTEM_PROMPT,
-    maxSteps: 1,
-    maxModelRetries: 0,
-    toolDelayMs: 0,
-    modelDefaults: {
-      model,
-      toolChoice: 'none',
-    },
-  })
-
-  await writeSummarizerDebugDump({
-    writtenAt: new Date().toISOString(),
-    engine: 'ekko-agent',
-    profile: options.profile,
-    model,
-    provider,
-    message: SUMMARIZER_TRIGGER_MESSAGE,
-    convHistory,
-  })
-
-  const result = await runtime.run({
-    messages: [
-      ...convHistory,
-      { role: 'user', content: SUMMARIZER_TRIGGER_MESSAGE },
-    ],
-    memoryEnabled: false,
-  })
-  const output = String(result.output.content || '').trim()
-  if (result.output.toolCalls?.length || result.output.finishReason === 'max_steps') {
-    throw new Error('Clean Ekko summarizer did not complete in one model step')
-  }
-  if (!output) throw new Error('Empty Ekko summarization response')
-  return output
 }
 
 async function callHermesSummarizer(

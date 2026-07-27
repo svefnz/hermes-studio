@@ -111,7 +111,7 @@ const visibleToolCalls = computed(() =>
 
 const emptyState = computed(() => {
   const session = chatStore.activeSession;
-  const codingAgentId = session?.codingAgentId || (session?.agent === "codex" ? "codex" : session?.agent === "claude" ? "claude-code" : session?.agent === "ekko-agent" ? "ekko-agent" : undefined);
+  const codingAgentId = session?.codingAgentId || (session?.agent === "codex" ? "codex" : session?.agent === "claude" ? "claude-code" : undefined);
   if (codingAgentId === "codex") {
     return {
       logo: "/coding-agents/codex-openai.png",
@@ -124,13 +124,6 @@ const emptyState = computed(() => {
       logo: "/coding-agents/claude-code.svg",
       alt: "Claude Code",
       text: t("chat.emptyStateAgent", { agent: "Claude Code" }),
-    };
-  }
-  if (codingAgentId === "ekko-agent") {
-    return {
-      logo: "/coding-agents/ekko-agent.png",
-      alt: "Ekko Agent",
-      text: t("chat.emptyStateAgent", { agent: "Ekko Agent" }),
     };
   }
   return {

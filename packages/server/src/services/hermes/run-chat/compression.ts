@@ -29,7 +29,6 @@ interface RunChatCompressionConfig {
 interface CompressionModelContext {
   model?: string | null
   provider?: string | null
-  allowHermesFallback?: boolean
 }
 
 export class ContextWindowTooSmallError extends Error {
@@ -484,7 +483,7 @@ export async function compressHistory(
       provider: summarizerModelContext.provider,
       historyRevision: session?.history_revision ?? 0,
       workerKey: `${summarizerProfile}:compression:${sessionId}`,
-      allowHermesFallback: modelContext.allowHermesFallback !== false,
+
     })
     const afterTokens = await calcAndUpdateUsage(sessionId, cState, emit, {
       truncateToolResultsForContext: true,
@@ -620,7 +619,7 @@ export async function forceCompressBridgeHistory(
     provider: summarizerModelContext.provider,
     historyRevision: session?.history_revision ?? 0,
     workerKey: `${summarizerProfile}:compression:${sessionId}`,
-    allowHermesFallback: true,
+
   })
   const compressedMessages = result.messages.map(m => {
     const msg: any = { role: m.role, content: m.content }

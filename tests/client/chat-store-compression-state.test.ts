@@ -447,14 +447,14 @@ describe('chat store compression state', () => {
           id: 3,
           role: 'tool',
           content: JSON.stringify({
-            runtime: 'ekko',
+            runtime: 'hermes',
             mode: 'background',
             subagent_id: 'child-1',
             status: 'running',
             goal: 'Inspect the task',
           }),
           display_content: JSON.stringify({
-            runtime: 'ekko',
+            runtime: 'hermes',
             mode: 'background',
             subagent_id: 'child-1',
             status: 'completed',
@@ -533,7 +533,7 @@ describe('chat store compression state', () => {
           id: 3,
           role: 'tool',
           content: JSON.stringify({
-            runtime: 'ekko',
+            runtime: 'hermes',
             mode: 'foreground',
             subagent_id: 'foreground-child',
             status: 'completed',
@@ -581,12 +581,10 @@ describe('chat store compression state', () => {
     )
   })
 
-  it('keeps only the clickable child card for a live Ekko foreground subtask', async () => {
+  it('keeps only the clickable child card for a live foreground subtask', async () => {
     const store = useChatStore()
     store.sessions = [{
       ...makeSession('session-1'),
-      agent: 'ekko-agent',
-      codingAgentId: 'ekko-agent',
     }]
     await store.switchSession('session-1')
 
@@ -619,7 +617,7 @@ describe('chat store compression state', () => {
       tool: 'delegate_task',
       tool_call_id: 'delegate-call-1',
       output: {
-        runtime: 'ekko',
+        runtime: 'hermes',
         mode: 'foreground',
         subagent_id: 'foreground-child',
         status: 'completed',

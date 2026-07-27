@@ -70,9 +70,7 @@ export async function loadSessionStateFromDb(sid: string, _sessionMap: Map<strin
     const session = actualDetail?.session || getSession(sid)
     const usageSource = session?.source === 'coding_agent' || ['codex', 'claude', 'claude-code', 'claude_code'].includes(session?.agent || '')
       ? 'coding_agent'
-      : session?.agent === 'ekko_agent' || session?.agent === 'ekko-agent'
-        ? 'ekko_agent'
-        : 'hermes'
+      : 'hermes'
     const totals = getRecordedUsageTotals(sid, usageSource)
     const pageUsage = estimateUsageTokensFromMessages(messages)
     const latestUsage = getUsage(sid)
