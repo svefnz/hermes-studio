@@ -142,27 +142,34 @@ journalctl -u hermes-studio -f
 
 ## 更新
 
-> 不要使用 `hermes-studio update` / `upgrade` 命令。它内部执行
-> `npm install -g hermes-studio@latest`，会去 npm registry 拉取——本包未发布到
-> npm，会 404 失败。源码安装请用下面的 git 流程。
+源码安装有两种更新方式。
 
-手动更新（源码）：
+### 方式一：内置命令（推荐）
+
+```bash
+hermes-studio update
+```
+
+它会在仓库目录自动执行：`git pull --ff-only` → `npm install` → `npm run build` → 重启。
+仅对源码安装（git 检出）有效；若不在 git 仓库里会回退到 npm registry（本包未发布，会失败）。
+
+`git pull` 非快进（本地有修改或需 rebase）时会报错退出，请先手动处理仓库状态。
+
+### 方式二：手动
 
 ```bash
 cd /opt/hermes-studio
-git pull                 # 拉取最新 main
-npm install              # 同步依赖变更
-npm run build            # 重新构建 dist/
-hermes-studio restart    # 重启守护进程
+git pull
+npm install
+npm run build
+hermes-studio restart      # 用 systemd 就换 systemctl restart hermes-studio
 ```
-
-用 systemd 的话，最后一步换成 `systemctl restart hermes-studio`。
 
 注意：
 
-- 保持服务器上的仓库检出干净（配置走环境变量和数据目录，不要直接改仓库文件），否则 `git pull` 可能冲突。
-- `npm install` 不会自动重建——`prepare` 只在 `dist/` 不存在时才构建，更新后必须手动 `npm run build`。
-- 想固定到某个版本/标签：用 `git checkout <tag>` 代替 `git pull`。
+- 保持仓库检出干净（配置走环境变量和数据目录，不要直接改仓库文件），否则 `git pull` 可能冲突。
+- `npm install` 不会自动重建--`prepare` 只在 `dist/` 不存在时才构建；手动更新后必须 `npm run build`（`hermes-studio update` 已内置此步骤）。
+- 想固定版本/标签：用 `git checkout <tag>` 代替 `git pull`，再 `npm install && npm run build && hermes-studio restart`。
 
 ## 常见问题
 

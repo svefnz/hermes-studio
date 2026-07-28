@@ -880,9 +880,71 @@ Options:
 	}
 }
 
+function isGitCheckout(dir) {
+	try {
+		execFileSync("git", ["-C", dir, "rev-parse", "--is-inside-work-tree"], {
+			stdio: "ignore",
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+function restartSelfAfterUpdate(port) {
+	console.log("  ✓ Update complete, restarting...");
+	const restart = spawnCli(
+		process.execPath,
+		[__filename, ...getRestartArgs(port)],
+		{
+			stdio: "inherit",
+			windowsHide: true,
+			env: getCurrentNodeEnv(),
+		},
+	);
+	restart.on("error", (err) => {
+		console.log(`  ✗ Restart failed: ${err.message}`);
+		process.exit(1);
+	});
+	restart.on("exit", (restartCode) => process.exit(restartCode ?? 1));
+}
+
 function doUpdate() {
 	console.log("  ⬆ Updating hermes-studio...");
+	const port = getUpdatePort();
 
+	if (isGitCheckout(pkgDir)) {
+		// 源码安装：git pull + npm install + npm run build，然后重启
+		const env = getCurrentNodeEnv();
+		const run = (cmd, args, label) => {
+			console.log(`  ${label}`);
+			execFileSync(cmd, args, { cwd: pkgDir, stdio: "inherit", env });
+		};
+		try {
+			run("git", ["pull", "--ff-only"], "⬇ git pull ...");
+		} catch (err) {
+			console.log(`  ✗ git pull 失败：${err?.message || err}`);
+			console.log(
+				"    请手动检查仓库状态（本地修改或非快进更新）",
+			);
+			process.exit(1);
+		}
+		try {
+			const npm = getNpmBin();
+			run(npm, ["install"], "📦 npm install ...");
+			run(npm, ["run", "build"], "🔨 npm run build ...");
+		} catch (err) {
+			console.log(`  ✗ 依赖安装或构建失败：${err?.message || err}`);
+			process.exit(1);
+		}
+		restartSelfAfterUpdate(port);
+		return;
+	}
+
+	// 非源码安装回退：尝试 npm registry（本包未发布，可能失败）
+	console.log(
+		"  ⚠ 未检测到 git 仓库，尝试 npm registry 更新（本包未发布，可能失败）...",
+	);
 	const npm = getNpmBin();
 	try {
 		console.log("  🧹 Cleaning npm cache...");
@@ -895,41 +957,18 @@ function doUpdate() {
 			`  ⚠ Failed to clean npm cache, continuing update: ${err?.message || err}`,
 		);
 	}
-
-	runUpdateInstall(npm);
-}
-
-function runUpdateInstall(npm) {
 	const child = spawnCli(npm, ["install", "-g", "hermes-studio@latest"], {
 		stdio: "inherit",
 		windowsHide: true,
 		env: getCurrentNodeEnv(),
 	});
-
 	child.on("error", (err) => {
 		console.log(`  ✗ Update failed: ${err.message}`);
 		process.exit(1);
 	});
-
 	child.on("exit", (code) => {
 		if (code === 0) {
-			console.log("  ✓ Update complete, restarting...");
-			const cli = getGlobalCliBin();
-			if (!existsSync(cli)) {
-				console.log(`  ✗ Updated CLI not found: ${cli}`);
-				process.exit(1);
-			}
-
-			const restart = spawnCli(cli, getRestartArgs(getUpdatePort()), {
-				stdio: "inherit",
-				windowsHide: true,
-				env: getCurrentNodeEnv(),
-			});
-			restart.on("error", (err) => {
-				console.log(`  ✗ Restart failed: ${err.message}`);
-				process.exit(1);
-			});
-			restart.on("exit", (restartCode) => process.exit(restartCode ?? 1));
+			restartSelfAfterUpdate(port);
 		} else {
 			console.log("  ✗ Update failed");
 			process.exit(code ?? 1);
