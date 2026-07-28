@@ -866,28 +866,35 @@ Options:
 			doUpdate();
 			break;
 		default: {
-			ensureNativeModules();
-			const port = !Number.isNaN(command) ? parseInt(command) : DEFAULT_PORT;
-			const windowsShell =
-				process.platform === "win32" ? getWindowsShell() : null;
-			const serverEnv = {
-				...process.env,
-				NODE_ENV: "production",
-				PORT: String(port),
-			};
-			if (windowsShell) {
-				serverEnv.SHELL = serverEnv.SHELL?.trim() || windowsShell;
-				serverEnv.ComSpec = serverEnv.ComSpec?.trim() || windowsShell;
+			if (/^\d+$/.test(command)) {
+				// Bare port number as command: hermes-studio 8648
+				ensureNativeModules();
+				const port = parseInt(command, 10);
+				const windowsShell =
+					process.platform === "win32" ? getWindowsShell() : null;
+				const serverEnv = {
+					...process.env,
+					NODE_ENV: "production",
+					PORT: String(port),
+				};
+				if (windowsShell) {
+					serverEnv.SHELL = serverEnv.SHELL?.trim() || windowsShell;
+					serverEnv.ComSpec = serverEnv.ComSpec?.trim() || windowsShell;
+				}
+				const child = spawn(process.execPath, [serverEntry], {
+					cwd: pkgDir,
+					stdio: "inherit",
+					env: serverEnv,
+					windowsHide: true,
+				});
+				child.on("exit", (code) => process.exit(code ?? 1));
+				process.on("SIGTERM", () => child.kill("SIGTERM"));
+				process.on("SIGINT", () => child.kill("SIGINT"));
+			} else {
+				console.log(`  ✗ Unknown command: ${command}`);
+				console.log(`    Run "hermes-studio --help" for usage.`);
+				process.exit(1);
 			}
-			const child = spawn(process.execPath, [serverEntry], {
-				cwd: pkgDir,
-				stdio: "inherit",
-				env: serverEnv,
-				windowsHide: true,
-			});
-			child.on("exit", (code) => process.exit(code ?? 1));
-			process.on("SIGTERM", () => child.kill("SIGTERM"));
-			process.on("SIGINT", () => child.kill("SIGINT"));
 		}
 	}
 }
