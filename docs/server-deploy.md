@@ -116,20 +116,21 @@ Description=Hermes Studio
 After=network.target
 
 [Service]
-Type=forking
+Type=simple
 WorkingDirectory=/root/hermes-studio
 EnvironmentFile=/etc/hermes-studio.env
-ExecStart=/bin/bash -lc 'exec node /root/hermes-studio/bin/hermes-studio.mjs start'
-ExecStop=/bin/bash -lc 'exec node /root/hermes-studio/bin/hermes-studio.mjs stop'
-PIDFile=/var/lib/hermes-studio/server.pid
+ExecStart=/root/hermes-studio/scripts/hermes-studio-wrapper.sh dist/server/index.js
 Restart=on-failure
+RestartSec=5
 User=root
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-> 按实际情况改 `WorkingDirectory` 和两处路径中的 `/root/hermes-studio`。`bash -lc` 通过 login shell 加载 fnm/nvm 环境，无需硬编码 node 路径。
+> 按实际情况改 `WorkingDirectory` 和路径中的 `/root/hermes-studio`。
+
+`Type=simple` 直接跑服务端进程，systemd 管生命周期，不经过 CLI 的 daemon 化逻辑（避免 `Type=forking` 卡住）。`hermes-studio-wrapper.sh` 自动加载 fnm/nvm 环境，确保用正确的 Node 版本。
 
 启用：
 
@@ -138,6 +139,13 @@ systemctl daemon-reload
 systemctl enable --now hermes-studio
 systemctl status hermes-studio
 journalctl -u hermes-studio -f
+```
+
+停/重启：
+
+```bash
+systemctl stop hermes-studio
+systemctl restart hermes-studio
 ```
 
 ## 更新
