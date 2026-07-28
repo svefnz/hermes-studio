@@ -134,21 +134,6 @@ function getCurrentNodeEnv() {
 	};
 }
 
-function getGlobalPrefix() {
-	return execFileSync(getNpmBin(), ["prefix", "-g"], {
-		encoding: "utf-8",
-		stdio: ["pipe", "pipe", "pipe"],
-		env: getCurrentNodeEnv(),
-	}).trim();
-}
-
-function getGlobalCliBin() {
-	const prefix = getGlobalPrefix();
-	return process.platform === "win32"
-		? join(prefix, "hermes-studio.cmd")
-		: join(prefix, "bin", "hermes-studio");
-}
-
 function getWindowsShell() {
 	const systemRoot = process.env.SystemRoot || "C:\\Windows";
 	const candidates = [
@@ -182,10 +167,12 @@ function spawnCli(command, args, options) {
 }
 
 function getPortFromArgs() {
-	if (process.argv[3] && !Number.isNaN(process.argv[3]))
-		return parseInt(process.argv[3]);
-	if (process.argv.includes("--port"))
-		return parseInt(process.argv[process.argv.indexOf("--port") + 1]);
+	if (process.argv[3] && /^\d+$/.test(process.argv[3]))
+		return parseInt(process.argv[3], 10);
+	if (process.argv.includes("--port")) {
+		const val = parseInt(process.argv[process.argv.indexOf("--port") + 1], 10);
+		return Number.isFinite(val) ? val : null;
+	}
 	return null;
 }
 
@@ -205,13 +192,38 @@ function getRunningPort() {
 			return port ? parseInt(port, 10) : null;
 		}
 
-		const out = execSync(`lsof -Pan -p ${pid} -iTCP -sTCP:LISTEN`, {
-			encoding: "utf-8",
-		}).trim();
-		const lines = out.split("\n").slice(1);
-		for (const line of lines) {
-			const match = line.match(/:(\d+)\s+\(LISTEN\)$/);
-			if (match) return parseInt(match[1], 10);
+		// Try ss first (standard on modern Linux, no lsof dependency)
+		if (commandExists("ss")) {
+			try {
+				const out = execFileSync("ss", ["-ltnp"], {
+					encoding: "utf-8",
+					stdio: ["ignore", "pipe", "ignore"],
+				}).trim();
+				for (const line of out.split(/\r?\n/).slice(1)) {
+					if (!line.includes(`pid=${pid}`)) continue;
+					const localAddr = line.trim().split(/\s+/)[3];
+					if (localAddr) {
+						const port = parseInt(localAddr.split(":").pop(), 10);
+						if (Number.isFinite(port)) return port;
+					}
+				}
+			} catch {}
+		}
+
+		// Fallback to lsof
+		if (commandExists("lsof")) {
+			try {
+				const out = execFileSync(
+					"lsof",
+					["-Pan", "-p", String(pid), "-iTCP", "-sTCP:LISTEN"],
+					{ encoding: "utf-8", stdio: ["ignore", "pipe", "ignore"] },
+				).trim();
+				const lines = out.split("\n").slice(1);
+				for (const line of lines) {
+					const match = line.match(/:(\d+)\s+\(LISTEN\)$/);
+					if (match) return parseInt(match[1], 10);
+				}
+			} catch {}
 		}
 	} catch {}
 
@@ -924,9 +936,7 @@ function doUpdate() {
 			run("git", ["pull", "--ff-only"], "⬇ git pull ...");
 		} catch (err) {
 			console.log(`  ✗ git pull 失败：${err?.message || err}`);
-			console.log(
-				"    请手动检查仓库状态（本地修改或非快进更新）",
-			);
+			console.log("    请手动检查仓库状态（本地修改或非快进更新）");
 			process.exit(1);
 		}
 		try {
