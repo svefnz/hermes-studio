@@ -117,10 +117,10 @@ After=network.target
 
 [Service]
 Type=forking
-WorkingDirectory=/opt/hermes-studio
+WorkingDirectory=/root/hermes-studio
 EnvironmentFile=/etc/hermes-studio.env
-ExecStart=/usr/bin/node /opt/hermes-studio/bin/hermes-studio.mjs start
-ExecStop=/usr/bin/node /opt/hermes-studio/bin/hermes-studio.mjs stop
+ExecStart=/bin/bash -lc 'exec node /root/hermes-studio/bin/hermes-studio.mjs start'
+ExecStop=/bin/bash -lc 'exec node /root/hermes-studio/bin/hermes-studio.mjs stop'
 PIDFile=/var/lib/hermes-studio/server.pid
 Restart=on-failure
 User=root
@@ -129,7 +129,7 @@ User=root
 WantedBy=multi-user.target
 ```
 
-> 按实际情况改 `WorkingDirectory`、`/usr/bin/node`（用 `which node` 确认）、`User`。
+> 按实际情况改 `WorkingDirectory` 和两处路径中的 `/root/hermes-studio`。`bash -lc` 通过 login shell 加载 fnm/nvm 环境，无需硬编码 node 路径。
 
 启用：
 
