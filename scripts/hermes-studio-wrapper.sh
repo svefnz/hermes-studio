@@ -4,10 +4,30 @@
 set -e
 
 # --- fnm ---
-if [ -f "$HOME/.local/share/fnm/env" ]; then
-    . "$HOME/.local/share/fnm/env"
-elif command -v fnm >/dev/null 2>&1; then
-    eval "$(fnm env)"
+# Find fnm binary: check FNM_PATH, common install locations, then PATH
+find_fnm() {
+    # FNM_PATH env var (set by user or /etc/hermes-studio.env)
+    if [ -n "${FNM_PATH:-}" ] && [ -x "$FNM_PATH/fnm" ]; then
+        echo "$FNM_PATH/fnm"; return 0
+    fi
+    # Standard Linux install
+    if [ -x "$HOME/.local/share/fnm/fnm" ]; then
+        echo "$HOME/.local/share/fnm/fnm"; return 0
+    fi
+    # Alternative install location
+    if [ -x "$HOME/.fnm/fnm" ]; then
+        echo "$HOME/.fnm/fnm"; return 0
+    fi
+    # Already on PATH
+    if command -v fnm >/dev/null 2>&1; then
+        command -v fnm; return 0
+    fi
+    return 1
+}
+
+if fnm_bin=$(find_fnm); then
+    export PATH="$(dirname "$fnm_bin"):$PATH"
+    eval "$("$fnm_bin" env)"
 fi
 
 # --- nvm ---
@@ -18,7 +38,8 @@ fi
 # Verify node version >= 23
 NODE_MAJOR=$(node -e "console.log(process.versions.node.split('.')[0])" 2>/dev/null || echo 0)
 if [ "$NODE_MAJOR" -lt 23 ]; then
-    echo "ERROR: Node.js v$(node -v) detected, v23+ required" >&2
+    echo "ERROR: Node.js $(node -v) detected, v23+ required" >&2
+    echo "Hint: install Node 23+ with fnm/nvm, or set FNM_PATH in /etc/hermes-studio.env" >&2
     exit 1
 fi
 
