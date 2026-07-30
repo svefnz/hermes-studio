@@ -5,8 +5,9 @@ Chat with agents, manage models and profiles, connect platform channels,
 automate jobs, and keep everything local.
 
 ```bash
-npm install -g @svefnz/hermes-studio
-hermes-studio start
+git clone https://github.com/svefnz/hermes-studio.git
+cd hermes-studio
+docker compose up -d --build
 ```
 
 Open **<http://localhost:8648>**
@@ -100,14 +101,17 @@ Launch and monitor local coding-agent sessions (Claude Code, Codex) from the das
 
 ## Quick Start
 
-### npm
+### Docker Compose
 
 ```bash
-npm install -g @svefnz/hermes-studio
-hermes-studio start
+git clone https://github.com/svefnz/hermes-studio.git
+cd hermes-studio
+docker compose up -d --build
 ```
 
 Open **<http://localhost:8648>**
+
+See [docs/server-deploy.md](./docs/server-deploy.md) for configuration details.
 
 ---
 

@@ -4,7 +4,9 @@
 与 Agent 对话、管理模型和配置、连接平台频道、自动化任务，一切本地运行。
 
 ```bash
-npm install -g @svefnz/hermes-studio && hermes-studio start
+git clone https://github.com/svefnz/hermes-studio.git
+cd hermes-studio
+docker compose up -d --build
 ```
 
 打开 **<http://localhost:8648>**
@@ -98,14 +100,17 @@ npm install -g @svefnz/hermes-studio && hermes-studio start
 
 ## 快速开始
 
-### npm
+### Docker Compose
 
 ```bash
-npm install -g @svefnz/hermes-studio
-hermes-studio start
+git clone https://github.com/svefnz/hermes-studio.git
+cd hermes-studio
+docker compose up -d --build
 ```
 
 打开 **<http://localhost:8648>**
+
+详见 [docs/server-deploy.md](./docs/server-deploy.md)。
 
 ---
 
