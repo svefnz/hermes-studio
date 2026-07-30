@@ -7,7 +7,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
 
 COPY . .
-RUN npm run build
+RUN mkdir -p docs && npm run build
 
 # ---- Runtime: production image ----
 FROM node:24-bookworm-slim
