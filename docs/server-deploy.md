@@ -63,7 +63,7 @@ docker compose exec hermes-studio node scripts/reset-default-login.mjs
 
 | 数据 | 容器路径 | 宿主机路径 | 说明 |
 | --- | --- | --- | --- |
-| Web UI 数据 | `/data` | `/var/lib/hermes-studio` | DB、日志、上传、token |
+| Web UI 数据 | `/data` | `/root/hermes-studio_data` | DB、日志、上传、token |
 | Hermes Agent 数据 | `/root/.hermes` | `/root/.hermes` | profiles、config.yaml、auth.json、凭据、模型配置 |
 
 Hermes Agent 数据以 **只读** 方式挂载（`:ro`），Studio 读取 Agent 的 profiles 和凭据来驱动 Web 端，但不会修改 Agent 数据。
@@ -72,7 +72,7 @@ Hermes Agent 数据以 **只读** 方式挂载（`:ro`），Studio 读取 Agent 
 
 ```yaml
 volumes:
-  - /var/lib/hermes-studio:/data
+  - /root/hermes-studio_data:/data
   - /root/.hermes:/root/.hermes:ro
 ```
 

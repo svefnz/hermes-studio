@@ -12,5 +12,5 @@ services:
       # - LOG_LEVEL=info
       # - AUTH_TOKEN=换成长随机串
     volumes:
-      - /var/lib/hermes-studio:/data
+      - /root/hermes-studio_data:/data
       - /root/.hermes:/root/.hermes:ro
