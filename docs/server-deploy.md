@@ -59,18 +59,24 @@ docker compose exec hermes-studio node scripts/reset-default-login.mjs
 
 ## 数据持久化
 
-数据存储在 Docker volume `hermes-studio-data`，映射到容器内 `/data`。查看位置：
+两组数据需要持久化：
 
-```bash
-docker volume inspect hermes-studio_hermes-studio-data
-```
+| 数据 | 容器路径 | 宿主机路径 | 说明 |
+| --- | --- | --- | --- |
+| Web UI 数据 | `/data` | `/var/lib/hermes-studio` | DB、日志、上传、token |
+| Hermes Agent 数据 | `/root/.hermes` | `/root/.hermes` | profiles、config.yaml、auth.json、凭据、模型配置 |
+
+Hermes Agent 数据以 **只读** 方式挂载（`:ro`），Studio 读取 Agent 的 profiles 和凭据来驱动 Web 端，但不会修改 Agent 数据。
 
 如需直接映射宿主机目录，把 `docker-compose.yml` 的 volumes 改为：
 
 ```yaml
 volumes:
   - /var/lib/hermes-studio:/data
+  - /root/.hermes:/root/.hermes:ro
 ```
+
+> 如果 Hermes Agent 的数据目录不是 `~/.hermes`，或不是 root 用户部署，按实际路径调整。
 
 ## 更新
 
