@@ -65,6 +65,7 @@ docker compose exec hermes-studio node scripts/reset-default-login.mjs
 | --- | --- | --- | --- |
 | Web UI 数据 | `/data` | `/root/hermes-studio_data` | DB、日志、上传、token |
 | Hermes Agent 数据 | `/root/.hermes` | `/root/.hermes` | profiles、config.yaml、auth.json、凭据、模型配置 |
+| Hermes Agent 代码 | `/usr/local/lib/hermes-agent` | `/usr/local/lib/hermes-agent` | Python agent 代码（bridge 需要） |
 
 Hermes Agent 数据以读写方式挂载，Studio 需要写入备份文件（如 `config.yaml.bak`）和注入 MCP 配置。
 
@@ -74,6 +75,7 @@ Hermes Agent 数据以读写方式挂载，Studio 需要写入备份文件（如
 volumes:
   - /root/hermes-studio_data:/data
   - /root/.hermes:/root/.hermes
+  - /usr/local/lib/hermes-agent:/usr/local/lib/hermes-agent:ro
 ```
 
 > 如果 Hermes Agent 的数据目录不是 `~/.hermes`，或不是 root 用户部署，按实际路径调整。
