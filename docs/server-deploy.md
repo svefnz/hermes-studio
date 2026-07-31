@@ -66,14 +66,14 @@ docker compose exec hermes-studio node scripts/reset-default-login.mjs
 | Web UI 数据 | `/data` | `/root/hermes-studio_data` | DB、日志、上传、token |
 | Hermes Agent 数据 | `/root/.hermes` | `/root/.hermes` | profiles、config.yaml、auth.json、凭据、模型配置 |
 
-Hermes Agent 数据以 **只读** 方式挂载（`:ro`），Studio 读取 Agent 的 profiles 和凭据来驱动 Web 端，但不会修改 Agent 数据。
+Hermes Agent 数据以读写方式挂载，Studio 需要写入备份文件（如 `config.yaml.bak`）和注入 MCP 配置。
 
 如需直接映射宿主机目录，把 `docker-compose.yml` 的 volumes 改为：
 
 ```yaml
 volumes:
   - /root/hermes-studio_data:/data
-  - /root/.hermes:/root/.hermes:ro
+  - /root/.hermes:/root/.hermes
 ```
 
 > 如果 Hermes Agent 的数据目录不是 `~/.hermes`，或不是 root 用户部署，按实际路径调整。

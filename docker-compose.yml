@@ -13,4 +13,4 @@ services:
       # - AUTH_TOKEN=换成长随机串
     volumes:
       - /root/hermes-studio_data:/data
-      - /root/.hermes:/root/.hermes:ro
+      - /root/.hermes:/root/.hermes
